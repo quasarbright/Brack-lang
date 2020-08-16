@@ -21,9 +21,14 @@ description:         Please see the README on GitHub at <https://github.com/Gith
 
 dependencies:
 - base >= 4.7 && < 5
+- containers
+- transformers
+- mtl
+- megaparsec
 
 library:
   source-dirs: src
+  ghc-options: -w -Wall
 
 executables:
   Brack-lang-exe:

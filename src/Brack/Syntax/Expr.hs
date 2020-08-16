@@ -2,14 +2,28 @@
 module Brack.Syntax.Expr where
 
 import Brack.Syntax.Name
-import Brack.Syntax.Type
 
 data Literal a = LInt Integer a
                | LDouble Double a
                | LChar Char a
                | LBool Bool a
-               deriving(Eq, Ord, Show, Functor)
+               deriving(Eq, Ord, Functor)
 
 data Expr a = Var (QName a) a
             | Lit (Literal a) a
-            deriving(Eq, Ord, Show, Functor)
+            | Paren (Expr a) a
+            deriving(Eq, Ord, Functor)
+
+instance Show (Literal a) where
+    show l_ = case l_ of
+        LInt n _ -> show n
+        LDouble d _ -> show d
+        LChar c _ -> show c
+        LBool True _ -> "true"
+        LBool False _ -> "false"
+
+instance Show (Expr a) where
+    show e_ = case e_ of
+        Var name _ -> show name
+        Lit l _ -> show l
+        Paren e _ -> concat["(",show e,")"]

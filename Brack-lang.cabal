@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b104c43a03cc98f33e4f5922ca1f527c6f116833d69a888654c5798e71a3e62f
+-- hash: 2790d378e9d0593ab9750a1ba09dbd99d7fa5afba0c65c35b4c4fc2e6a82e172
 
 name:           Brack-lang
 version:        0.1.0.0
@@ -27,13 +27,26 @@ source-repository head
 
 library
   exposed-modules:
+      Brack.Parsing.Parser
+      Brack.Parsing.ParseUtils
+      Brack.Syntax.Expr
+      Brack.Syntax.Module
+      Brack.Syntax.Name
+      Brack.Syntax.Statement
+      Brack.Syntax.Type
+      Brack.Utils.Common
       Lib
   other-modules:
       Paths_Brack_lang
   hs-source-dirs:
       src
+  ghc-options: -w -Wall
   build-depends:
       base >=4.7 && <5
+    , containers
+    , megaparsec
+    , mtl
+    , transformers
   default-language: Haskell2010
 
 executable Brack-lang-exe
@@ -46,6 +59,10 @@ executable Brack-lang-exe
   build-depends:
       Brack-lang
     , base >=4.7 && <5
+    , containers
+    , megaparsec
+    , mtl
+    , transformers
   default-language: Haskell2010
 
 test-suite Brack-lang-test
@@ -59,4 +76,8 @@ test-suite Brack-lang-test
   build-depends:
       Brack-lang
     , base >=4.7 && <5
+    , containers
+    , megaparsec
+    , mtl
+    , transformers
   default-language: Haskell2010

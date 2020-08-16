@@ -9,4 +9,13 @@ data Type a = TInt a
             | TChar a
             | TVoid a
             | TCon (QName a) a
-            deriving(Eq, Ord, Show, Functor)
+            deriving(Eq, Ord, Functor)
+
+instance Show (Type a) where
+    show t_ = case t_ of
+        TInt{} -> "int"
+        TDouble{} -> "double"
+        TBool{} -> "bool"
+        TChar{} -> "char"
+        TVoid{} -> "void"
+        TCon name _ -> show name
