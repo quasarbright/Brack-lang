@@ -15,7 +15,7 @@ repeatUntilIdempotent f x = if x == x' then x else repeatUntilIdempotent f x'
 -- | wrapper type that changes the behavior of equality.
 -- All values of this type are equal (for Eq and Ord).
 -- Useful for tagging where expr equality is tag-independent
-newtype AllSame a = AllSame a deriving(Show)
+newtype AllSame a = AllSame{ unSame :: a } deriving(Show)
 
 instance Eq (AllSame a) where
   _ == _ = True
