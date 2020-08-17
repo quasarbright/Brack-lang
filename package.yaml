@@ -25,6 +25,7 @@ dependencies:
 - transformers
 - mtl
 - megaparsec
+- parser-combinators
 
 library:
   source-dirs: src

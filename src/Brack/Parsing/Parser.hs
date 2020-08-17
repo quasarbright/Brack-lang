@@ -1,5 +1,7 @@
 module Brack.Parsing.Parser where
 
+
+import Brack.Utils.Common
 import Brack.Syntax.Name
 import Brack.Syntax.Type
 import Brack.Syntax.Expr
@@ -11,14 +13,49 @@ import Data.Functor(($>))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Control.Monad.Combinators.Expr
 
 import Brack.Parsing.ParseUtils
 import Data.Void (Void)
 
 -- expressions
+type ExprParser = Parser (Expr SS) -> Parser (Expr SS)
 
 pExpr :: Parser (Expr SS)
-pExpr = choice [wrapSSApp (Lit <$> pLiteral), pVar]
+pExpr = topParser [pOp, pAtomic]
+
+pOp :: ExprParser
+pOp child = makeExprParser child table
+    where
+        table =
+            [ [Prefix (prim1Chain Negate)]
+            , [Prefix (prim1Chain Not)]
+            , [InfixR (prim2Chain Pow)]
+            , [InfixL (prim2Chain Times), InfixL (prim2Chain Divide), InfixL (prim2Chain Modulo)]
+            , [InfixL (prim2Chain Plus), InfixL (prim2Chain Minus)]
+            , [InfixL (prim2Chain prim2) | prim2 <- [Less, LessEq, Greater, GreaterEq]]
+            , [InfixL (prim2Chain Equals), InfixL (prim2Chain NotEquals)]
+            , [InfixL (prim2Chain Or)]
+            , [InfixL (prim2Chain And)]
+            ]
+
+prim2Chain :: Prim2 -> Parser (Expr SS -> Expr SS -> Expr SS)
+prim2Chain prim2 = pReservedOp (show prim2) >> return f
+    where f left right = Prim2 left prim2 right (combineSS (getTag left) (getTag right))
+
+prim1Chain :: Prim1 -> Parser (Expr SS -> Expr SS)
+prim1Chain prim1 = do
+    startPos <- getSourcePos
+    pReservedOp (show prim1)
+    endPos <- getSourcePos
+    let ss = (startPos, endPos)
+    return $ \e -> Prim1 prim1 e (combineSS ss (getTag e))
+
+pAtomic :: ExprParser
+pAtomic child = choice [wrapSSApp (Lit <$> pLiteral), pVar, pParen child]
+
+pParen :: ExprParser
+pParen child = wrapSSApp (Paren <$> parens child)
 
 pVar :: Parser (Expr SS)
 pVar = wrapSSApp $ Var <$> pLowerName
