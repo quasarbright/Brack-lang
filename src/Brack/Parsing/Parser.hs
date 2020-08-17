@@ -4,7 +4,6 @@ module Brack.Parsing.Parser where
 import Brack.Utils.Common
 import Brack.Syntax.Name
 import Brack.Syntax.Type
-import Brack.Syntax.Expr
 import Brack.Syntax.Statement
 import Brack.Syntax.Module
 
@@ -22,7 +21,18 @@ import Data.Void (Void)
 type ExprParser = Parser (Expr SS) -> Parser (Expr SS)
 
 pExpr :: Parser (Expr SS)
-pExpr = topParser [pOp, pAtomic]
+pExpr = topParser [pFunctionExpr, pOp, pAtomic]
+
+pFunctionExpr :: ExprParser
+pFunctionExpr child = pFunctionExpr_ <|> child
+
+pFunctionExpr_ :: Parser (Expr SS)
+pFunctionExpr_ = wrapSSApp $ do
+    pKeyword "function"
+    args <- pArgs
+    pReservedOp "->"
+    retType <- pType
+    Function args retType <$> block
 
 pOp :: ExprParser
 pOp child = makeExprParser child table
@@ -94,8 +104,13 @@ pBool = wrapSSApp $ LBool <$> choice [pKeyword "true" $> True, pKeyword "false" 
 
 -- types
 
+type TypeParser = Parser (Type SS) -> Parser (Type SS)
+
 pType :: Parser (Type SS)
-pType = choice (pConType : (uncurry pSpecialType <$> [("int", TInt), ("double", TDouble), ("char", TChar), ("bool", TBool), ("void", TVoid)]))
+pType = choice (pTArr : pConType : (uncurry pSpecialType <$> [("int", TInt), ("double", TDouble), ("char", TChar), ("bool", TBool), ("void", TVoid)]))
+
+pTArr :: Parser (Type SS)
+pTArr = wrapSSApp $ TArr <$> parens (pType `sepBy` pReservedOp ",") <*> (pReservedOp "->" *> pType)
 
 pSpecialType :: String -> (SS -> Type SS) -> Parser (Type SS)
 pSpecialType name con = wrapSSApp (pKeyword name $> con)
@@ -115,7 +130,7 @@ blockOrSingle :: Parser [Statement SS]
 blockOrSingle = block <|> ((: []) <$> pStatement)
 
 pStatement :: Parser (Statement SS)
-pStatement = choice [pIf, pWhile, try pAssignment, try pDefinition, pExecution]
+pStatement = choice [pIf, pWhile, pFunctionDefinition, pReturn, try pAssignment, try pDefinition, pExecution]
 
 pDefinition :: Parser (Statement SS)
 pDefinition = wrapSSApp $ do
@@ -124,19 +139,37 @@ pDefinition = wrapSSApp $ do
     typ <- pType
     pReservedOp "="
     rhs <- pExpr
-    pReservedOp ";"
+    pSemi
     return (Definition name typ rhs)
+
+pArgs :: Parser [(QName SS, Type SS)]
+pArgs = parens (annot `sepBy` pReservedOp ",")
+    where
+        annot = do
+            name <- pLowerName
+            pReservedOp "::"
+            t <- pType
+            return (name, t)
+
+pFunctionDefinition :: Parser (Statement SS)
+pFunctionDefinition = wrapSSApp $ do
+    pKeyword "def"
+    name <- pLowerName
+    args <- pArgs
+    pReservedOp "->"
+    retType <- pType
+    FunctionDefinition name args retType <$> block
 
 pAssignment :: Parser (Statement SS)
 pAssignment = wrapSSApp $ do
     name <- pLowerName
     pReservedOp "="
     rhs <- pExpr
-    pReservedOp ";"
+    pSemi
     return (Assignment name rhs)
 
 pExecution :: Parser (Statement SS)
-pExecution = wrapSSApp $ Execution <$> (pExpr <* pReservedOp ";")
+pExecution = wrapSSApp $ Execution <$> (pExpr <* pSemi)
 
 pIf :: Parser (Statement SS)
 pIf = wrapSSApp $ do
@@ -148,6 +181,9 @@ pIf = wrapSSApp $ do
 
 pWhile :: Parser (Statement SS)
 pWhile = wrapSSApp $ pKeyword "while" *> (While <$> parens pExpr <*> blockOrSingle)
+
+pReturn :: Parser (Statement SS)
+pReturn = wrapSSApp $ Return <$> (pKeyword "return" *> pExpr <* pSemi)
 
 -- module
 

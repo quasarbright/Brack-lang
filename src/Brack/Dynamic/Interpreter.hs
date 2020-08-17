@@ -6,7 +6,6 @@ import Brack.Dynamic.Memory
 import Brack.Dynamic.DynamicError
 
 --import Brack.Syntax.Name
-import Brack.Syntax.Expr
 import Brack.Syntax.Statement
 import Brack.Syntax.Module
 

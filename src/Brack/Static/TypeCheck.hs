@@ -2,7 +2,6 @@ module Brack.Static.TypeCheck where
 
 import Brack.Syntax.Name
 import Brack.Syntax.Type
-import Brack.Syntax.Expr
 import Brack.Syntax.Statement
 import Brack.Syntax.Module
 

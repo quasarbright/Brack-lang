@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3770f352fe6203755ee73f4e3aa41788c2177f3dbab2ad591f8336ee709c6b3f
+-- hash: f9be0e8a8d1e63e109cdf20f1a4ae9b1bf9d38b35628c5625143440a3def777a
 
 name:           Brack-lang
 version:        0.1.0.0
@@ -35,7 +35,6 @@ library
       Brack.Static.StaticError
       Brack.Static.TypeCheck
       Brack.Static.WellFormed
-      Brack.Syntax.Expr
       Brack.Syntax.Module
       Brack.Syntax.Name
       Brack.Syntax.Statement

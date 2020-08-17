@@ -43,10 +43,10 @@ pReservedOpWith :: Parser () -> String -> Parser ()
 pReservedOpWith sc' name = void . L.lexeme sc' $ (string name <* notFollowedBy opLetter)
 
 reservedWords :: [String]
-reservedWords = words "if else int char bool double true false public private const var for while do"
+reservedWords = words "if else int char bool double true false public private const var for while do def function return"
 
 reservedOps :: [String]
-reservedOps = words "= -> => :: || && + - * / ; ^"
+reservedOps = words "= -> => :: || && + - * / ; ^ ,"
 
 lowerIdentStart :: Parser Char
 lowerIdentStart = lowerChar <|> char '_'

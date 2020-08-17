@@ -12,7 +12,7 @@ import qualified Data.Map as Map
 --import Data.List
 
 import Brack.Syntax.Name
-import Brack.Syntax.Expr
+import Brack.Syntax.Statement
 
 -- TODO stack frames
 data Memory a = Memory { getStack :: [(QName a, Cell)] -- list for push-pop
