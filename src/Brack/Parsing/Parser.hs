@@ -13,6 +13,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Brack.Parsing.ParseUtils
+import Data.Void (Void)
 
 -- expressions
 
@@ -57,7 +58,7 @@ pBool = wrapSSApp $ LBool <$> choice [pKeyword "true" $> True, pKeyword "false" 
 -- types
 
 pType :: Parser (Type SS)
-pType = choice (pConType : (uncurry pSpecialType <$> [("int", TInt), ("double", TDouble), ("char", TChar), ("void", TVoid)]))
+pType = choice (pConType : (uncurry pSpecialType <$> [("int", TInt), ("double", TDouble), ("char", TChar), ("bool", TBool), ("void", TVoid)]))
 
 pSpecialType :: String -> (SS -> Type SS) -> Parser (Type SS)
 pSpecialType name con = wrapSSApp (pKeyword name $> con)
@@ -115,3 +116,11 @@ pWhile = wrapSSApp $ pKeyword "while" *> (While <$> parens pExpr <*> blockOrSing
 
 pModule :: Parser (Module SS)
 pModule = between scn eof (wrapSSApp $ Module <$> many pStatement)
+
+parseModule :: String -> String -> Either (ParseErrorBundle String Void) (Module SS)
+parseModule = runParser pModule
+
+parseModuleUnsafe :: String -> String -> Module SS
+parseModuleUnsafe name input = case parseModule name input of
+    Left err -> error (show err)
+    Right m -> m

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2790d378e9d0593ab9750a1ba09dbd99d7fa5afba0c65c35b4c4fc2e6a82e172
+-- hash: ae092ecc010b59eb1aca3a880706081ceec0a25820d795655b94b3cf0639df33
 
 name:           Brack-lang
 version:        0.1.0.0
@@ -29,6 +29,9 @@ library
   exposed-modules:
       Brack.Parsing.Parser
       Brack.Parsing.ParseUtils
+      Brack.Static.StaticError
+      Brack.Static.TypeCheck
+      Brack.Static.WellFormed
       Brack.Syntax.Expr
       Brack.Syntax.Module
       Brack.Syntax.Name
@@ -75,6 +78,7 @@ test-suite Brack-lang-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Brack-lang
+    , HUnit
     , base >=4.7 && <5
     , containers
     , megaparsec

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Brack.Syntax.Statement where
 
+import Brack.Utils.Common
 import Brack.Syntax.Name
 import Brack.Syntax.Type
 import Brack.Syntax.Expr
@@ -24,3 +25,11 @@ instance Show (Statement a) where
                     Nothing -> ""
                     Just els -> " else { "++unwords (show <$> els) ++ " }"
         While cnd body _ -> "while ("++show cnd++") { "++unwords (show <$> body)++" }"
+
+instance Tagged Statement where
+    getTag s_ = case s_ of
+        Definition _ _ _ a -> a
+        Assignment _ _ a -> a
+        Execution _ a -> a
+        If _ _ _ a -> a
+        While _ _ a -> a

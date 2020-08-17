@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Brack.Syntax.Expr where
 
+import Brack.Utils.Common
 import Brack.Syntax.Name
 
 data Literal a = LInt Integer a
@@ -27,3 +28,9 @@ instance Show (Expr a) where
         Var name _ -> show name
         Lit l _ -> show l
         Paren e _ -> concat["(",show e,")"]
+
+instance Tagged Expr where
+    getTag e_ = case e_ of
+        Var _ a -> a
+        Lit _ a -> a
+        Paren _ a -> a

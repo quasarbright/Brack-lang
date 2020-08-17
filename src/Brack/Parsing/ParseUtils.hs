@@ -7,9 +7,6 @@ import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import qualified Text.Megaparsec.Debug as DBG
-import Data.Maybe
-import Debug.Trace
 
 type Parser = Parsec Void String
 
@@ -103,6 +100,9 @@ topParser :: [Parser a -> Parser a] -> Parser a
 topParser parsers = foldr (\ep p -> ep p) (error "you will never arrive at the truth") (cycle parsers)
 
 type SS = (SourcePos, SourcePos)
+
+dummySS :: SS
+dummySS = (sp, sp) where sp = SourcePos "<dummy>" (mkPos 1) (mkPos 1)
 
 -- | run the given parser and record the source span of the parse
 wrapSS :: Parser a -> Parser (a, SS)
