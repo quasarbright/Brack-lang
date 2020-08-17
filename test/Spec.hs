@@ -54,4 +54,23 @@ main = runTestTT $ do
         , tProgramCheckFail "if condition must be boolean" "if (1) { true; }" (TypeMismatch (TBool ss) (TInt ss) ss)
         , tProgramCheckFail "if condition non-boolean reference" "x :: int = 1; if (x) { true; }" (TypeMismatch (TBool ss) (TInt ss) ss)
         , tProgramCheckFail "while condition must be boolean" "while (1) { true; }" (TypeMismatch (TBool ss) (TInt ss) ss)
+        , tProgramCheckPass "variable types are scoped" $
+            unlines [ "x :: int = 1;"
+                    , "if (true) {"
+                    , "  y :: int = x;"
+                    , "  x :: bool = true;"
+                    , "  z :: bool = x;"
+                    , "}"
+                    , "y :: int = x;"
+                    ]
+        , tProgramCheckFail "variable types are scoped (error)"
+            (unlines [ "x :: int = 1;"
+                    , "if (true) {"
+                    , "  y :: int = x;"
+                    , "  x :: bool = true;"
+                    , "  z :: bool = x;"
+                    , "}"
+                    , "y :: bool = x;"
+                    ])
+            (TypeMismatch (TBool ss) (TInt ss) ss)
         ]
