@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ae092ecc010b59eb1aca3a880706081ceec0a25820d795655b94b3cf0639df33
+-- hash: b0f817d1023b2ebb1a8c9018f8bfab55974f9a63c02739009284cda92af18060
 
 name:           Brack-lang
 version:        0.1.0.0
@@ -27,6 +27,9 @@ source-repository head
 
 library
   exposed-modules:
+      Brack.Dynamic.DynamicError
+      Brack.Dynamic.Interpreter
+      Brack.Dynamic.Memory
       Brack.Parsing.Parser
       Brack.Parsing.ParseUtils
       Brack.Static.StaticError

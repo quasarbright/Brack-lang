@@ -5,8 +5,11 @@ import Brack.Parsing.Parser
 import Brack.Parsing.ParseUtils(SS, dummySS)
 import Brack.Utils.Common
 import Brack.Syntax.Module
+import Brack.Syntax.Name
 import Brack.Syntax.Type
 import Brack.Static.StaticError
+import Brack.Dynamic.Memory
+import Brack.Dynamic.Interpreter
 
 teq :: (Eq a, Show a) => String -> a -> a -> Test
 teq name a b = TestCase (assertEqual name a b)
@@ -36,9 +39,18 @@ tProgramCheckFail name code err = teq name (Left err) actual
 ss :: AllSame SS
 ss = AllSame dummySS
 
+tInterpExports :: String -> String -> [(String, Cell)] -> Test
+tInterpExports name code stack = teq name (Right stack') actual
+    where
+        stack' = [(UnQualified (LowerIdent x ss) ss, c) | (x,c) <- stack]
+        m = parseModuleSame name code
+        actual = case runProgram m of
+            Left err -> Left err
+            Right (_,s) -> Right (getStack s)
+
 main :: IO Counts
-main = runTestTT $ do
-    TestLabel "Type checking tests" $ TestList
+main = runTestTT $ TestList
+    [ TestLabel "Type checking tests" (TestList
         [ tpass
         , tProgramCheckPass "one" "1;"
         , tProgramCheckPass "1 is an int" "x :: int = 1;"
@@ -73,4 +85,25 @@ main = runTestTT $ do
                     , "y :: bool = x;"
                     ])
             (TypeMismatch (TBool ss) (TInt ss) ss)
+        ])
+
+    , TestLabel "interpreter tests" $ TestList
+        [ tpass
+        , tInterpExports "run empty module" "" []
+        , tInterpExports "x = 1" "x :: int = 1;" [("x", CInt 1)]
+        , tInterpExports "if reassignment"
+            (unlines
+                [ "x :: int = 1;"
+                , "b :: bool = false;"
+                , "if (b) { x = 2; } else { x = 3; }"
+                ])
+            [("b", CBool False), ("x", CInt 3)]
+        , tInterpExports "basic while"
+            (unlines
+                [ "x :: int = 1;"
+                , "b :: bool = true;"
+                , "while (b) { x = 2; b = false; }"
+                ])
+            [("b", CBool False), ("x", CInt 2)]
         ]
+    ]

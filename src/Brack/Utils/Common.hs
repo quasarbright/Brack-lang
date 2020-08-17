@@ -1,5 +1,8 @@
 module Brack.Utils.Common where
 
+import Control.Monad.Trans.Class
+import Control.Monad.State.Strict
+
 infixl 1 |>
 (|>) :: a -> (a -> b) -> b
 x |> f = f x
@@ -25,3 +28,10 @@ instance Ord (AllSame a) where
 
 class Tagged f where
   getTag :: f a -> a
+
+type StateExceptT s e v = StateT s (Either (e,s)) v
+
+throw :: e -> StateExceptT s e v
+throw err = do
+    s <- get
+    lift (Left (err, s))
