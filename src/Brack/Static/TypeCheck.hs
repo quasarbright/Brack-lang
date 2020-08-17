@@ -98,7 +98,72 @@ inferExpr e_ = localTagged e_ $ case e_ of
        LDouble{} -> TDouble tag
        LChar{} -> TChar tag
        LBool{} -> TBool tag
+    Prim1 prim1 e tag ->
+        case prim1 of
+            Not -> checkExpr e (TBool tag) >> return (TBool tag)
+            Negate -> do
+                t <- inferExpr e
+                case t of
+                    TInt{} -> return t
+                    TDouble{} -> return t
+                    _ -> throwAndTag (TypeMismatch (TDouble tag) t)
+    Prim2 left prim2 right tag ->
+        let doArith = inferArith left right tag
+            doCmp = inferCmp left right tag
+            doLogic = inferLogic left right tag
+        in case prim2 of
+            Plus -> doArith
+            Minus -> doArith
+            Times -> doArith
+            Divide -> doArith
+            Modulo -> doArith
+            Pow -> doArith >> return (TDouble tag)
+            Less -> doCmp
+            Greater -> doCmp
+            LessEq -> doCmp
+            GreaterEq -> doCmp
+            Equals -> inferExpr left >> inferExpr right >> return (TBool tag)
+            NotEquals -> inferExpr left >> inferExpr right >> return (TBool tag)
+            Or -> doLogic
+            And -> doLogic
     Paren e _ -> inferExpr e
+
+inferArith :: Ord a => Expr a -> Expr a -> a -> TypeChecker a (Type a)
+inferArith left right tag = do
+    lType <- inferExpr left
+    rType <- inferExpr right
+    case (lType, rType) of
+        (TDouble{}, TDouble{}) -> return lType
+        (TDouble{}, TInt{}) -> return lType
+        (TInt{}, TDouble{}) -> return rType
+        (TInt{}, TInt{}) -> return lType
+        (TInt{}, _) -> throwAndTag (TypeMismatch lType rType)
+        (TDouble{}, _) -> throwAndTag (TypeMismatch lType rType)
+        (_, TInt{}) -> throwAndTag (TypeMismatch rType lType)
+        (_, TDouble{}) -> throwAndTag (TypeMismatch rType lType)
+        _ -> throwAndTag (TypeMismatch (TDouble tag) lType)
+
+inferCmp :: Ord a => Expr a -> Expr a -> a -> TypeChecker a (Type a)
+inferCmp left right tag = do
+    lType <- inferExpr left
+    rType <- inferExpr right
+    let tBool = TBool tag
+    case (lType, rType) of
+        (TDouble{}, TDouble{}) -> return tBool
+        (TDouble{}, TInt{}) -> return tBool
+        (TInt{}, TDouble{}) -> return tBool
+        (TInt{}, TInt{}) -> return tBool
+        (TInt{}, _) -> throwAndTag (TypeMismatch lType rType)
+        (TDouble{}, _) -> throwAndTag (TypeMismatch lType rType)
+        (_, TInt{}) -> throwAndTag (TypeMismatch rType lType)
+        (_, TDouble{}) -> throwAndTag (TypeMismatch rType lType)
+        _ -> throwAndTag (TypeMismatch (TDouble tag) lType)
+
+inferLogic :: Ord a => Expr a -> Expr a -> a -> TypeChecker a (Type a)
+inferLogic left right tag = do
+    checkExpr left (TBool tag)
+    checkExpr right (TBool tag)
+    return (TBool tag)
 
 assertSameType :: Eq a => Type a -> Type a -> TypeChecker a ()
 assertSameType expected actual =

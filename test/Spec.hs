@@ -48,6 +48,8 @@ tInterpExports name code stack = teq name (Right stack') actual
             Left err -> Left err
             Right (_,s) -> Right (getStack s)
 
+mismatch a b = TypeMismatch (a ss) (b ss) ss
+
 main :: IO Counts
 main = runTestTT $ TestList
     [ TestLabel "Type checking tests" (TestList
@@ -85,6 +87,36 @@ main = runTestTT $ TestList
                     , "y :: bool = x;"
                     ])
             (TypeMismatch (TBool ss) (TInt ss) ss)
+        , tProgramCheckPass "1 + 1 by itself" "1 + 1;"
+        , tProgramCheckPass "int + int = int" "x :: int = 1 + 1;"
+        , tProgramCheckPass "int + double = double" "x :: double = 1 + 1.0;"
+        , tProgramCheckPass "double + int = double" "x :: double = 1.0 + 1;"
+        , tProgramCheckPass "double + double = double" "x :: double = 1.0 + 1.0;"
+        , tProgramCheckPass "int ^ int = double" "x :: double = 1 ^ 1;"
+        , tProgramCheckPass "int ^ double = double" "x :: double = 1 ^ 1.0;"
+        , tProgramCheckPass "double ^ int = double" "x :: double = 1.0 ^ 1;"
+        , tProgramCheckPass "double ^ double = double" "x :: double = 1.0 ^ 1.0;"
+        , tProgramCheckPass "negative int = int" "x :: int = -1;"
+        , tProgramCheckPass "negative double = double" "x :: double = -1.0;"
+        , tProgramCheckPass "bool || bool = bool" "x :: bool = true || true;"
+        , tProgramCheckPass "!bool = bool" "x :: bool = !true;"
+        , tProgramCheckPass "int < int = bool" "x :: bool = 1 < 1;"
+        , tProgramCheckPass "int < double = bool" "x :: bool = 1 < 1.0;"
+        , tProgramCheckPass "double < int = bool" "x :: bool = 1.0 < 1;"
+        , tProgramCheckPass "double < double = bool" "x :: bool = 1.0 < 1.0;"
+        , tProgramCheckPass "int == bool = bool" "x :: bool = 1 == true;"
+        , tProgramCheckPass "int != bool = bool" "x :: bool = 1 != true;"
+        , tProgramCheckFail "int + bool fails" "1 + true;" (mismatch TInt TBool)
+        , tProgramCheckFail "bool + int fails" "true + 1;" (mismatch TInt TBool)
+        , tProgramCheckFail "double + bool fails" "1.0 + true;" (mismatch TDouble TBool)
+        , tProgramCheckFail "bool + double fails" "true + 1.0;" (mismatch TDouble TBool)
+        , tProgramCheckFail "bool + bool fails" "true + true;" (mismatch TDouble TBool)
+        , tProgramCheckFail "bool < int fails" "true < 1;" (mismatch TInt TBool)
+        , tProgramCheckFail "bool || int fails" "true || 1;" (mismatch TBool TInt)
+        , tProgramCheckFail "int || bool fails" "1 || true;" (mismatch TBool TInt)
+        , tProgramCheckFail "int || int fails" "1 || 1;" (mismatch TBool TInt)
+        , tProgramCheckFail "negative bool fails" "-true;" (mismatch TDouble TBool)
+        , tProgramCheckFail "not int fails" "!1;" (mismatch TBool TInt)
         ])
 
     , TestLabel "interpreter tests" $ TestList
