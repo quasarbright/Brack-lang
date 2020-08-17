@@ -137,5 +137,10 @@ main = runTestTT $ TestList
                 , "while (b) { x = 2; b = false; }"
                 ])
             [("b", CBool False), ("x", CInt 2)]
+        , tInterpExports "basic arithmetic" "x :: double = 1 + 2.0;" [("x", CDouble 3.0)]
+        , tInterpExports "basic logic" "x :: bool = true && (true || false);" [("x", CBool True)]
+        , tInterpExports "basic comparison" "x :: bool = 1 < 2.0;" [("x", CBool True)]
+        , tInterpExports "basic equality" "x :: bool = 1 == 1;" [("x", CBool True)]
+        , tInterpExports "cross-type equality" "x :: bool = 1 == false;" [("x", CBool False)]
         ]
     ]
