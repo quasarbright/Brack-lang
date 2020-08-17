@@ -142,5 +142,7 @@ main = runTestTT $ TestList
         , tInterpExports "basic comparison" "x :: bool = 1 < 2.0;" [("x", CBool True)]
         , tInterpExports "basic equality" "x :: bool = 1 == 1;" [("x", CBool True)]
         , tInterpExports "cross-type equality" "x :: bool = 1 == false;" [("x", CBool False)]
+        , tInterpExports "short-circuit logic" "x :: bool = false && (1 / 0 == 2);" [("x", CBool False)]
+        , tInterpExports "short-circuit if" "x :: int = 1; if (false) { x = 1 / 0; } else { x = 2; }" [("x", CInt 2)]
         ]
     ]
