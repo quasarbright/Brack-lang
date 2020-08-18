@@ -65,6 +65,9 @@ checkStatement s_ t = localTagged s_ $
             let ctx = getContext s
             let ctx' = Map.insert name t' ctx
             put (s{getContext = ctx'})
+        FunctionDefinition name typedArgs retType body tag -> do
+            funType <- inferFunType typedArgs retType body tag
+            modify $ \s -> s{getContext = Map.insert name funType (getContext s)}
         Assignment name e tag -> do
             nameType <- inferExpr (Var name tag)
             checkExpr e nameType
@@ -78,7 +81,16 @@ checkStatement s_ t = localTagged s_ $
         While cnd body tag -> do
             checkExpr cnd (TBool tag)
             checkStatements body t
+        Return e _ -> checkExpr e t
 
+inferFunType :: Ord a => [(QName a, Type a)] -> Type a -> [Statement a] -> a -> TypeChecker a (Type a)
+inferFunType typedArgs retType body tag = do
+    oldCtx <- getContext <$> get
+    let newCtx = Map.union (Map.fromList typedArgs) oldCtx
+    modify $ \s -> s{getContext = newCtx}
+    checkStatements body retType
+    modify $ \s -> s{getContext = oldCtx}
+    return $ TArr (snd <$> typedArgs) retType tag
 
 checkExpr :: Ord a => Expr a -> Type a -> TypeChecker a ()
 checkExpr e t = localTagged e $ do
@@ -125,6 +137,15 @@ inferExpr e_ = localTagged e_ $ case e_ of
             NotEquals -> inferExpr left >> inferExpr right >> return (TBool tag)
             Or -> doLogic
             And -> doLogic
+    Application f args _ -> do
+        fType <- inferExpr f
+        case fType of
+            TArr argTypes retType _ -> do
+                unless (length argTypes == length args) (throwAndTag (ArityError (length argTypes) (length args)))
+                zipWithM_ checkExpr args argTypes
+                return retType
+            _ -> throwAndTag (AppliedNonFunction fType)
+    Function typedArgs retType body tag -> inferFunType typedArgs retType body tag
     Paren e _ -> inferExpr e
 
 inferArith :: Ord a => Expr a -> Expr a -> a -> TypeChecker a (Type a)
@@ -175,12 +196,14 @@ assertSameType expected actual =
         (TDouble{}, TDouble{}) -> ok
         (TVoid{}, TVoid{}) -> ok
         (TCon a _, TCon b _) -> unless (a == b) err
+        (TArr args ret _, TArr args' ret' _) -> zipWithM_ assertSameType (args++[ret]) (args'++[ret'])
         (TInt{},_) -> err
         (TChar{},_) -> err
         (TDouble{},_) -> err
         (TBool{},_) -> err
         (TVoid{},_) -> err
         (TCon{},_) -> err
+        (TArr{}, _) -> err
 
 runTypeCheckingWith :: Ord a => Module a -> TCState a -> Either (StaticError a, TCState a) ((), TCState a)
 runTypeCheckingWith m = runStateT (checkModule m)

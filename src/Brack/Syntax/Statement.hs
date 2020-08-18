@@ -6,6 +6,14 @@ import Brack.Syntax.Name
 import Brack.Syntax.Type
 import Data.List (intercalate)
 
+{-
+TODO break
+TODO for loops
+TODO printing
+TODO lists
+TODO rec 
+-}
+
 data Statement a = Definition (QName a) (Type a) (Expr a) a
                  | FunctionDefinition (QName a) [(QName a, Type a)] (Type a) [Statement a] a
                  | Assignment (QName a) (Expr a) a
@@ -40,6 +48,7 @@ instance Tagged Statement where
         Execution _ a -> a
         If _ _ _ a -> a
         While _ _ a -> a
+        Return _ a -> a
 
 -- exprs
 

@@ -21,7 +21,7 @@ import Data.Void (Void)
 type ExprParser = Parser (Expr SS) -> Parser (Expr SS)
 
 pExpr :: Parser (Expr SS)
-pExpr = topParser [pFunctionExpr, pOp, pAtomic]
+pExpr = topParser [pFunctionExpr, pOp, pApp, pAtomic]
 
 pFunctionExpr :: ExprParser
 pFunctionExpr child = pFunctionExpr_ <|> child
@@ -60,6 +60,14 @@ prim1Chain prim1 = do
     endPos <- getSourcePos
     let ss = (startPos, endPos)
     return $ \e -> Prim1 prim1 e (combineSS ss (getTag e))
+
+pApp :: ExprParser
+pApp child = do
+    f <- child
+    -- this weirdness is necessary to parse f(a)(b)(c,d)
+    argss <- many (wrapSS $ parens (child `sepBy` pReservedOp ","))
+    let go app (args, ss) = Application app args (combineSS (getTag app) ss)
+    return $ foldl go f argss
 
 pAtomic :: ExprParser
 pAtomic child = choice [wrapSSApp (Lit <$> pLiteral), pVar, pParen child]

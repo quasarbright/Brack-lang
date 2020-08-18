@@ -11,6 +11,8 @@ import Brack.Static.StaticError
 import Brack.Dynamic.Memory
 import Brack.Dynamic.Interpreter
 
+import Data.Map as Map
+
 teq :: (Eq a, Show a) => String -> a -> a -> Test
 teq name a b = TestCase (assertEqual name a b)
 
@@ -46,7 +48,7 @@ tInterpExports name code stack = teq name (Right stack') actual
         m = parseModuleSame name code
         actual = case runProgram m of
             Left err -> Left err
-            Right (_,s) -> Right (getStack s)
+            Right (_,s) -> Right (Map.toList (getLocals s))
 
 mismatch a b = TypeMismatch (a ss) (b ss) ss
 
@@ -117,7 +119,25 @@ main = runTestTT $ TestList
         , tProgramCheckFail "int || int fails" "1 || 1;" (mismatch TBool TInt)
         , tProgramCheckFail "negative bool fails" "-true;" (mismatch TDouble TBool)
         , tProgramCheckFail "not int fails" "!1;" (mismatch TBool TInt)
+        , tProgramCheckPass "function definition basic" "def f(x :: int) -> int { return x + 1; }"
+        , tProgramCheckPass "function application basic" "def f(x :: int) -> int { return x + 1; } y :: int = f(1);"
+        , tProgramCheckPass "lambda basic" "f :: (int) -> int = function(x :: int) -> int { return x + 1; };"
+        , tProgramCheckPass "lambda application basic" "f :: (int) -> int = function(x :: int) -> int { return x + 1; }; y :: int = f(1);"
+        , tProgramCheckPass "higher order function"
+            (unlines
+                [ "def f(x :: int) -> int {"
+                , "  return x + 1;"
+                , "}"
+                , "def g() -> (int) -> int { return f; }"
+                , "y :: int = g()(1);"
+                ])
+        , tProgramCheckPass "void function" "def f() -> void {} f();"
+        , tProgramCheckFail "apply non-function" "1(true);" (AppliedNonFunction (TInt ss) ss)
+        , tProgramCheckFail "arity error" "def f() -> void {} f(4);" (ArityError 0 1 ss)
+        , tProgramCheckFail "wrong argument type" "def f(x :: int, y :: bool) -> bool { return (x < 1) == y; } f(1, 2);" (mismatch TBool TInt)
         ])
+
+    -------------------------------
 
     , TestLabel "interpreter tests" $ TestList
         [ tpass
@@ -144,5 +164,43 @@ main = runTestTT $ TestList
         , tInterpExports "cross-type equality" "x :: bool = 1 == false;" [("x", CBool False)]
         , tInterpExports "short-circuit logic" "x :: bool = false && (1 / 0 == 2);" [("x", CBool False)]
         , tInterpExports "short-circuit if" "x :: int = 1; if (false) { x = 1 / 0; } else { x = 2; }" [("x", CInt 2)]
+        , tInterpExports "local scoping with if" "x :: int = 1; if (true) { x :: bool = 2; } y :: int = x + 1;" [("x", CInt 1), ("y", CInt 2)]
+        , tInterpExports "function application" "def f(x :: int) -> int { return x + 1; } x :: int = f(3);" [("f", Pointer 0), ("x", CInt 4)]
+        , tInterpExports "functions close over variables"
+            (unwords
+                [ "x :: int = 1;"
+                , "def f() -> int { return x; }"
+                , "y :: int = f();"
+                ])
+            [("f", Pointer 0), ("x", CInt 1), ("y", CInt 1)]
+        , tInterpExports "closed variables are by reference. Like any argument passed in"
+        -- the alternative would require unique names and a redesigned stack
+            (unlines
+                [ "x :: int = 1;"
+                , "def f() -> int { x = x - 1; return x; } // modification doesn't effect x"
+                , "y :: int = f();"
+                , "x2 :: int = x; // still 1"
+                , "y2 :: int = f();"
+                , "x = 2;"
+                , "y3 :: int = f();"
+                , "// all y's are 0 since f uses x = 1 always"
+                ])
+            [("f", Pointer 0), ("x", CInt 2), ("x2", CInt 1), ("y", CInt 0), ("y2", CInt 0), ("y3", CInt 0)]
+        , tInterpExports "if in a function"
+            (unlines
+                [ "def f(x :: int) -> int {"
+                , "  if (x < 0) {"
+                , "    return 0;"
+                , "  } else if (x == 1) {"
+                , "    x = 0;"
+                , "    return x;"
+                , "  } else {"
+                , "    x = 10;"
+                , "    return x;"
+                , "  }"
+                , "}"
+                , "x :: int = f(9);"
+                ])
+            [("f", Pointer 0), ("x", CInt 10)]
         ]
     ]
