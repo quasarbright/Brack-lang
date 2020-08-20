@@ -138,7 +138,7 @@ blockOrSingle :: Parser [Statement SS]
 blockOrSingle = block <|> ((: []) <$> pStatement)
 
 pStatement :: Parser (Statement SS)
-pStatement = choice [pIf, pWhile, pFunctionDefinition, pReturn, try pAssignment, try pDefinition, pExecution]
+pStatement = choice [pIf, pWhile, pFunctionDefinition, pReturn, pBreak, pContinue, try pAssignment, try pDefinition, pExecution]
 
 pDefinition :: Parser (Statement SS)
 pDefinition = wrapSSApp $ do
@@ -192,6 +192,12 @@ pWhile = wrapSSApp $ pKeyword "while" *> (While <$> parens pExpr <*> blockOrSing
 
 pReturn :: Parser (Statement SS)
 pReturn = wrapSSApp $ Return <$> (pKeyword "return" *> pExpr <* pSemi)
+
+pBreak :: Parser (Statement SS)
+pBreak = Break . snd <$> wrapSS (pKeyword "break" *> pSemi)
+
+pContinue :: Parser (Statement SS)
+pContinue = Continue . snd <$> wrapSS (pKeyword "continue" *> pSemi)
 
 -- module
 

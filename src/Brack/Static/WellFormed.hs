@@ -12,6 +12,7 @@ no return in void (currently don't allow return;)
 warning for unused variables
 warning for same-scope shadowing
 break only in loops
+continue only in loops
 return only in functions
 only fun defs in rec
 shadowing in rec groups (and f(f, x, ...) self-shadowing)

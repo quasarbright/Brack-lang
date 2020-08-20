@@ -8,10 +8,11 @@ import Data.List (intercalate)
 
 {-
 TODO break
+TODO continue
 TODO for loops
 TODO printing
 TODO lists
-TODO rec 
+TODO rec
 -}
 
 data Statement a = Definition (QName a) (Type a) (Expr a) a
@@ -21,6 +22,8 @@ data Statement a = Definition (QName a) (Type a) (Expr a) a
                  | If (Expr a) [Statement a] (Maybe [Statement a]) a
                  | While (Expr a) [Statement a] a
                  | Return (Expr a) a
+                 | Break a
+                 | Continue a
                  deriving(Eq, Ord, Functor)
 
 instance Show (Statement a) where
@@ -38,6 +41,8 @@ instance Show (Statement a) where
                     Just els -> " else " ++ show els
         While cnd body _ -> "while ("++show cnd++") " ++ show body
         Return e _ -> "return " ++ show e ++ ";"
+        Break _ -> "break;"
+        Continue _ -> "continue;"
     showList statements = showString "{ " . showString (unwords (show <$> statements)) . showString " }"
 
 instance Tagged Statement where
@@ -49,6 +54,8 @@ instance Tagged Statement where
         If _ _ _ a -> a
         While _ _ a -> a
         Return _ a -> a
+        Break a -> a
+        Continue a -> a
 
 -- exprs
 
