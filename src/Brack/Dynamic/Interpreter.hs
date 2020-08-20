@@ -29,6 +29,7 @@ type Interpreter a b = StateExceptT (InterpreterState a) (DynamicError a) b
 -- | The result of a computation
 data Result = Returned Cell
             | Broke
+            | Continued
             -- TODO errors
             | Normal
             deriving(Eq, Ord, Show)
@@ -86,10 +87,15 @@ runStatement s_ = case s_ of
                 result <- runBlock body
                 case result of
                     Normal -> runStatement s_ -- run the while loop again
-                    _ -> return result -- stop (either broke or returned
+                    Continued -> runStatement s_ -- run the while loop again
+                    Broke -> return result
+                    Returned{} -> return result
             CBool False -> return Normal
             _ -> throw $ InternalError ("condition not a boolean at runtime: "++show cnd) tag
     Return e _ -> Returned <$> evalExpr e
+    Break _ -> return Broke
+    Continue _ -> return Continued
+
 
 allocateFunction :: Ord a => Maybe (QName a) -> [(QName a, Type a)] -> Type a -> [Statement a] -> a -> Interpreter a Cell
 allocateFunction mName typedArgs retType body tag = do

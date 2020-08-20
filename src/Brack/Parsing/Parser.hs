@@ -43,7 +43,7 @@ pOp child = makeExprParser child table
             , [InfixR (prim2Chain Pow)]
             , [InfixL (prim2Chain Times), InfixL (prim2Chain Divide), InfixL (prim2Chain Modulo)]
             , [InfixL (prim2Chain Plus), InfixL (prim2Chain Minus)]
-            , [InfixL (prim2Chain prim2) | prim2 <- [Less, LessEq, Greater, GreaterEq]]
+            , [InfixL (prim2Chain prim2) | prim2 <- [LessEq, Less, GreaterEq, Greater]]
             , [InfixL (prim2Chain Equals), InfixL (prim2Chain NotEquals)]
             , [InfixL (prim2Chain Or)]
             , [InfixL (prim2Chain And)]

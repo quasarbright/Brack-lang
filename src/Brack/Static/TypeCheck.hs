@@ -82,6 +82,8 @@ checkStatement s_ t = localTagged s_ $
             checkExpr cnd (TBool tag)
             checkStatements body t
         Return e _ -> checkExpr e t
+        Break{} -> return ()
+        Continue{} -> return ()
 
 inferFunType :: Ord a => [(QName a, Type a)] -> Type a -> [Statement a] -> a -> TypeChecker a (Type a)
 inferFunType typedArgs retType body tag = do

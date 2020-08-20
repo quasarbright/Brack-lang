@@ -202,5 +202,55 @@ main = runTestTT $ TestList
                 , "x :: int = f(9);"
                 ])
             [("f", Pointer 0), ("x", CInt 10)]
+        , tInterpExports "factorial with while loop"
+            (unlines
+                [ "def factorial(x :: int) -> int {"
+                , "  ans :: int = 1;"
+                , "  while(x > 0) {"
+                , "    ans = ans * x;"
+                , "    x = x - 1;"
+                , "  }"
+                , "  return ans;"
+                , "}"
+                , "six :: int = factorial(3);"
+                ])
+            [("factorial", Pointer 0), ("six", CInt 6)]
+        , tInterpExports "loop with break"
+            (unlines
+                [ "x :: int = 0;"
+                , "while (true) {"
+                , "  if (x == 2) {"
+                , "    break;"
+                , "  }"
+                , "  x = x + 1;"
+                , "  }"
+                ])
+            [("x", CInt 2)]
         ]
+        , tInterpExports "loop with continue"
+            (unlines
+                [ "x :: int = 0;"
+                , "while (true) {"
+                , "  x = x + 1;"
+                , "  if (x != 2) {"
+                , "    continue;"
+                , "  }"
+                , "  break;"
+                , "}"
+                ])
+            [("x", CInt 2)]
+        , tInterpExports "return in a loop"
+            (unlines
+                [ "def factorial(x :: int) -> int {"
+                , "  ans :: int = 1;"
+                , "  while(true) {"
+                , "    if (x <= 0) { return ans; }"
+                , "    ans = ans * x;"
+                , "    x = x - 1;"
+                , "  }"
+                , "  return ans;"
+                , "}"
+                , "six :: int = factorial(3);"
+                ])
+            [("factorial", Pointer 0), ("six", CInt 6)]
     ]
