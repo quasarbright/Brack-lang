@@ -7,8 +7,6 @@ import Brack.Syntax.Type
 import Data.List (intercalate)
 
 {-
-TODO break
-TODO continue
 TODO for loops
 TODO printing
 TODO lists

@@ -16,6 +16,7 @@ warning for same-scope shadowing
 break only in loops
 continue only in loops
 return only in functions
+break in a function definition in a loop is not well-formed
 only fun defs in rec
 shadowing in rec groups (and f(f, x, ...) self-shadowing)
 -}
